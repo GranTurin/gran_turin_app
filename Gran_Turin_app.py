@@ -25,8 +25,9 @@ acomp = st.multiselect("Escolha os Acompanhamentos:", opcoes_acomp)
 
 if st.button("Enviar Pedido"):
     msg = f"Olá! Pedido de {nome}: {carne} com {', '.join(acomp)}"
-    link = f"https://wa.me/5511999999999?text={urllib.parse.quote(msg)}"
+    link = f"https://wa.me/5521986577315?text={urllib.parse.quote(msg)}"
     st.link_button("Ir para o WhatsApp", link)
+
 
 
 
