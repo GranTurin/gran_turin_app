@@ -3,7 +3,7 @@ import pandas as pd
 import urllib.parse
 
 # LINK DA SUA PLANILHA (Cole o link do CSV aqui)
-URL_PLANILHA = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQBai98jFvBGaS_TM0Qaao5bGanhR85VbvSuFFJvbha1DW5gXJlyXXqEiq3dUgVvQTqplDcG3jQqqLG/pub?output=csv"
+URL_PLANILHA = https://docs.google.com/spreadsheets/d/e/2PACX-1vQBai98jFvBGaS_TM0Qaao5bGanhR85VbvSuFFJvbha1DW5gXJlyXXqEiq3dUgVvQTqplDcG3jQqqLG/pub?output=csv
 
 def carregar_dados():
     # Lê a planilha e remove linhas vazias
@@ -28,3 +28,4 @@ if st.button("Enviar Pedido"):
     msg = f"Olá! Pedido de {nome}: {carne} com {', '.join(acomp)}"
     link = f"https://wa.me/5511999999999?text={urllib.parse.quote(msg)}"
     st.link_button("Ir para o WhatsApp", link)
+
