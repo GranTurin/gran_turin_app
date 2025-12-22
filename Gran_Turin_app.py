@@ -2,28 +2,10 @@ import streamlit as st
 import pandas as pd
 import urllib.parse
 
-###############Apagar se der ruim###########
-
-# Configuração da página e Meta Tags para o WhatsApp
-st.set_page_config(page_title="Gran Turin - Pedidos", page_icon="🍱")
-
-st.markdown(
-    f"""
-    <head>
-        <meta property="og:title" content="🍱 Gran Turin - Faça seu Pedido" />
-        <meta property="og:description" content="Confira o cardápio de hoje e monte sua marmita!" />
-        <meta property="og:image" content="https://raw.githubusercontent.com/GranTurin/gran_turin_app/main/logo.png" />
-        <meta property="og:url" content="https://gran-turin-app.streamlit.app" />
-        <meta property="og:type" content="website" />
-    </head>
-    """,
-    unsafe_allow_html=True
-)#######################ate aqui ####
-
-#st.set_page_config(
-#    page_title="Gran Turin",
-#    page_icon="logo.png", # Isso coloca a logo na aba do navegador
-#)
+st.set_page_config(
+    page_title="Gran Turin",
+    page_icon="logo.png", # Isso coloca a logo na aba do navegador
+)
 
 
 # LINK DA SUA PLANILHA (Cole o link do CSV aqui)
@@ -51,6 +33,7 @@ if st.button("Enviar Pedido"):
     msg = f"Olá! Pedido de {nome}: {carne} com {', '.join(acomp)}"
     link = f"https://wa.me/5521986577315?text={urllib.parse.quote(msg)}"
     st.link_button("Ir para o WhatsApp", link)
+
 
 
 
