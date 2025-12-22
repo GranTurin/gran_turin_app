@@ -10,7 +10,6 @@ MINHA_LOGO = "https://raw.githubusercontent.com/GranTurin/gran_turin_app/refs/he
 #https://github.com/GranTurin/gran_turin_app/edit/main/logo.png
 #https://raw.githubusercontent.com/seu-usuario/seu-repo/main/logo.png
 
-
 st.markdown(f"""
     <head>
         <meta property="og:title" content="🍱 Marmitaria - Faça seu Pedido Aqui" />
@@ -19,6 +18,9 @@ st.markdown(f"""
         <meta property="og:type" content="website" />
     </head>
     """, unsafe_allow_html=True)
+
+    # Se quiser exibir a logo também dentro do site:
+st.image(LINK_DA_LOGO, width=150)
 
 #######################ate aqui ####
 
@@ -51,6 +53,7 @@ if st.button("Enviar Pedido"):
     msg = f"Olá! Pedido de {nome}: {carne} com {', '.join(acomp)}"
     link = f"https://wa.me/5521986577315?text={urllib.parse.quote(msg)}"
     st.link_button("Ir para o WhatsApp", link)
+
 
 
 
