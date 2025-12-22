@@ -6,7 +6,10 @@ import urllib.parse
 
 # O link da imagem deve ser DIRETO (terminar em .jpg ou .png)
 # Dica: Use o link da sua logo que você subiu no GitHub
-MINHA_LOGO = "https://raw.githubusercontent.com/seu-usuario/seu-repo/main/logo.png"
+MINHA_LOGO = "https://github.com/GranTurin/gran_turin_app/edit/main/logo.png"
+https://github.com/GranTurin/gran_turin_app/edit/main/logo.png
+#https://raw.githubusercontent.com/seu-usuario/seu-repo/main/logo.png
+
 
 st.markdown(f"""
     <head>
@@ -48,6 +51,7 @@ if st.button("Enviar Pedido"):
     msg = f"Olá! Pedido de {nome}: {carne} com {', '.join(acomp)}"
     link = f"https://wa.me/5521986577315?text={urllib.parse.quote(msg)}"
     st.link_button("Ir para o WhatsApp", link)
+
 
 
 
