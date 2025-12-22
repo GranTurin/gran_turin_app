@@ -2,6 +2,23 @@ import streamlit as st
 import pandas as pd
 import urllib.parse
 
+###############Apagar se der ruim###########
+
+# O link da imagem deve ser DIRETO (terminar em .jpg ou .png)
+# Dica: Use o link da sua logo que você subiu no GitHub
+MINHA_LOGO = "https://raw.githubusercontent.com/seu-usuario/seu-repo/main/logo.png"
+
+st.markdown(f"""
+    <head>
+        <meta property="og:title" content="🍱 Marmitaria - Faça seu Pedido Aqui" />
+        <meta property="og:description" content="Clique para ver o cardápio do dia e montar sua marmita!" />
+        <meta property="og:image" content="{MINHA_LOGO}" />
+        <meta property="og:type" content="website" />
+    </head>
+    """, unsafe_allow_html=True)
+
+#######################ate aqui ####
+
 st.set_page_config(
     page_title="Gran Turin",
     page_icon="logo.png", # Isso coloca a logo na aba do navegador
@@ -31,6 +48,7 @@ if st.button("Enviar Pedido"):
     msg = f"Olá! Pedido de {nome}: {carne} com {', '.join(acomp)}"
     link = f"https://wa.me/5521986577315?text={urllib.parse.quote(msg)}"
     st.link_button("Ir para o WhatsApp", link)
+
 
 
 
