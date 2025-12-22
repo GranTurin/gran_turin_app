@@ -7,7 +7,6 @@ st.set_page_config(
     page_icon="logo.png", # Isso coloca a logo na aba do navegador
 )
 
-
 # LINK DA SUA PLANILHA (Cole o link do CSV aqui)
 URL_PLANILHA = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQBai98jFvBGaS_TM0Qaao5bGanhR85VbvSuFFJvbha1DW5gXJlyXXqEiq3dUgVvQTqplDcG3jQqqLG/pub?output=csv"
 def carregar_dados():
@@ -19,20 +18,24 @@ try:
     df = carregar_dados()
     opcoes_carne = df['Carnes'].dropna().tolist()
     opcoes_acomp = df['Acompanhamentos'].dropna().tolist()
+    opcoes_tamanho = df['Tamanho'].dropna().tolist()
 except:
     st.error("Erro ao carregar o cardápio. Verifique o link da planilha!")
-    opcoes_carne, opcoes_acomp = [], []
+    opcoes_carne, opcoes_acomp, opcoes_tamanho = [], [], []
 
 # --- Resto do código da interface ---
-st.title("🍱 Cardápio Atualizado")
+st.title("🍱 Cardápio do Dia")
 nome = st.text_input("Seu Nome:")
+end = st.text_input("Endereço ou Loja:")
+Tamanho = st.selectbox("Escolha a Proteína:", opcoes_carne)
 carne = st.selectbox("Escolha a Proteína:", opcoes_carne)
 acomp = st.multiselect("Escolha os Acompanhamentos:", opcoes_acomp)
 
 if st.button("Enviar Pedido"):
-    msg = f"Olá! Pedido de {nome}: {carne} com {', '.join(acomp)}"
+    msg = f"Olá! Pedido de {nome}: {tamanho} {carne} com {', '.join(acomp)}"
     link = f"https://wa.me/5521986577315?text={urllib.parse.quote(msg)}"
     st.link_button("Ir para o WhatsApp", link)
+
 
 
 
