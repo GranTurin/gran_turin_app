@@ -3,15 +3,15 @@ import pandas as pd
 import urllib.parse
 
 # --- CONFIGURAÇÃO DE PREVIEW (PARA WHATSAPP/REDES SOCIAIS) ---
-st.set_page_config(page_title="Nome da Sua Marmitaria", page_icon="🍱")
+st.set_page_config(page_title="GRAN TURIN", page_icon="🍱")
 
 # Isso ajuda o WhatsApp a encontrar sua imagem e descrição
 st.markdown(
     f"""
     <head>
-        <meta property="og:title" content="Marmitaria - Faça seu Pedido" />
+        <meta property="og:title" content="Gran Turin - Faça seu Pedido" />
         <meta property="og:description" content="Monte sua marmita do dia e envie pelo WhatsApp!" />
-        <meta property="og:image" content="https://sua-logo-link-direto.png" />
+        <meta property="og:image" content="https://logo.png" />
         <meta property="og:type" content="website" />
     </head>
     """,
@@ -42,6 +42,7 @@ if st.button("Enviar Pedido"):
     msg = f"Olá! Pedido de {nome}: {carne} com {', '.join(acomp)}"
     link = f"https://wa.me/5521986577315?text={urllib.parse.quote(msg)}"
     st.link_button("Ir para o WhatsApp", link)
+
 
 
 
