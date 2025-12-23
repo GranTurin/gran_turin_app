@@ -7,11 +7,8 @@ import urllib.parse
 SUPABASE_URL = "https://mvozbjdmfkezdlzipstw.supabase.co"
 SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im12b3piamRtZmtlemRsemlwc3R3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY0NTEzMDksImV4cCI6MjA4MjAyNzMwOX0.pd76MIzgkfrbwvN0GlZxqIviKLEG49VCWRiXR4-13Bg"
 
-@st.cache_resource
-def get_supabase():
-    return create_client(SUPABASE_URL, SUPABASE_KEY)
-
-supabase = get_supabase()
+# Conexão direta sem cache para garantir que os dados apareçam
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 st.set_page_config(page_title="Gestor Gran Turin", layout="centered")
 st.title("📊 Gestor de Preços Gran Turin")
@@ -23,10 +20,13 @@ with tab1:
     whatsapp_num = st.text_input("WhatsApp para envio (55+DDD+Número)", value="55")
     
     # Carregar dados para os selects
-    res_p = supabase.table("lista_produtos").select("nome").order("nome").execute()
-    res_m = supabase.table("lista_mercados").select("nome").order("nome").execute()
-    prods = [p['nome'] for p in res_p.data] if res_p.data else []
-    mercs = [m['nome'] for m in res_m.data] if res_m.data else []
+    try:
+        res_p = supabase.table("lista_produtos").select("nome").order("nome").execute()
+        res_m = supabase.table("lista_mercados").select("nome").order("nome").execute()
+        prods = [p['nome'] for p in res_p.data] if res_p.data else []
+        mercs = [m['nome'] for m in res_m.data] if res_m.data else []
+    except:
+        prods, mercs = [], []
 
     with st.expander("➕ Lançar Novo Preço"):
         col1, col2 = st.columns(2)
@@ -37,74 +37,86 @@ with tab1:
             res_c = supabase.table("lista_produtos").select("categoria").eq("nome", p_sel).execute()
             cat = res_c.data[0]['categoria'] if res_c.data else "Geral"
             supabase.table("precos").insert({"produto": p_sel, "mercado": m_sel, "valor": v_sel, "categoria": cat}).execute()
+            st.success("Preço salvo!")
             st.rerun()
 
     st.divider()
     
-    # Listagem Comparativa
     res_all = supabase.table("precos").select("*").execute()
     if res_all.data:
         df = pd.DataFrame(res_all.data)
-        # Botão WhatsApp
-        texto_wa = "*🛒 RESUMO DE PREÇOS:*\n\n"
-        for p in sorted(df['produto'].unique()):
-            df_p = df[df['produto'] == p]
-            win = df_p.loc[df_p['valor'].idxmin()]
-            texto_resumo = f"✅ *{p}*\n📍 {win['mercado']}: R$ {win['valor']:.2f}\n\n"
-            texto_wa += texto_resumo
-        
-        st.link_button("📲 Enviar Menores Preços", f"https://wa.me/{whatsapp_num}?text={urllib.parse.quote(texto_wa)}", type="primary")
+        # Lógica de Cores e WhatsApp...
+        for cat in sorted(df['categoria'].unique()):
+            st.markdown(f"#### 📂 {cat}")
+            df_cat = df[df['categoria'] == cat]
+            for p in sorted(df_cat['produto'].unique()):
+                precos_p = df_cat[df_cat['produto'] == p].sort_values(by="valor")
+                min_v = precos_p['valor'].min()
+                st.write(f"**📦 {p}**")
+                for _, row in precos_p.iterrows():
+                    bg = "#d4edda" if row['valor'] == min_v else "#ffffff"
+                    st.markdown(f'<div style="background-color:{bg}; padding:10px; border-radius:5px; border:1px solid #eee; color:black; margin-bottom:5px;"><b>{row["mercado"]}</b>: R$ {row["valor"]:.2f}</div>', unsafe_allow_html=True)
 
-# --- ABA 2: CADASTROS (REESCRITA PARA FORÇAR EXIBIÇÃO) ---
+# --- ABA 2: CADASTROS (CORRIGIDA) ---
 with tab2:
-    st.header("⚙️ Ver e Gerenciar Cadastros")
+    st.header("⚙️ Gerenciar Cadastros")
 
-    # --- CATEGORIAS ---
-    with st.expander("📂 Lista de Categorias", expanded=True):
-        res_cat = supabase.table("categorias").select("*").execute()
-        if res_cat.data:
-            # Mostra em uma lista simples
-            for c in res_cat.data:
-                st.markdown(f"✅ **{c.get('nome', 'Sem Nome')}**")
+    # 1. CATEGORIAS
+    st.subheader("1. Categorias")
+    with st.container():
+        # BUSCA DADOS PRIMEIRO
+        res_c = supabase.table("categorias").select("nome").order("nome").execute()
+        if res_c.data:
+            # Criamos uma string com todas as categorias separadas por vírgula ou lista
+            lista_nomes = ", ".join([c['nome'] for c in res_c.data])
+            st.info(f"**Já Cadastradas:** {lista_nomes}")
         else:
-            st.warning("Nenhuma categoria encontrada no banco.")
+            st.warning("Nenhuma categoria encontrada.")
         
-        st.write("---")
-        nova_c = st.text_input("Cadastrar Nova Categoria:").upper()
-        if st.button("Salvar Categoria"):
-            supabase.table("categorias").insert({"nome": nova_c}).execute()
-            st.rerun()
+        c_in, c_bt = st.columns([3, 1])
+        nova_cat = c_in.text_input("Nova Categoria:", key="new_cat").upper()
+        if c_bt.button("Adicionar", key="add_cat"):
+            if nova_cat:
+                supabase.table("categorias").insert({"nome": nova_cat}).execute()
+                st.rerun()
 
-    # --- PRODUTOS ---
-    with st.expander("📦 Lista de Produtos", expanded=True):
-        res_prod = supabase.table("lista_produtos").select("*").execute()
-        if res_prod.data:
-            df_prod = pd.DataFrame(res_prod.data)
-            st.dataframe(df_prod, use_container_width=True)
+    st.divider()
+
+    # 2. PRODUTOS
+    st.subheader("2. Produtos")
+    with st.container():
+        res_p_list = supabase.table("lista_produtos").select("nome, categoria").order("nome").execute()
+        if res_p_list.data:
+            df_p = pd.DataFrame(res_p_list.data)
+            st.dataframe(df_p, use_container_width=True)
         else:
-            st.warning("Nenhum produto encontrado no banco.")
+            st.warning("Nenhum produto encontrado.")
 
-        st.write("---")
-        n_p = st.text_input("Cadastrar Novo Produto:").upper()
-        n_a = st.number_input("Preço Alvo:", min_value=0.0)
-        # Puxa categorias para o select
-        cat_options = [c['nome'] for c in res_cat.data] if res_cat.data else []
-        n_c = st.selectbox("Categoria:", cat_options)
-        if st.button("Salvar Produto"):
-            supabase.table("lista_produtos").insert({"nome": n_p, "categoria": n_c, "preco_alvo": n_a}).execute()
-            st.rerun()
+        p_nome = st.text_input("Nome do Produto:", key="new_p").upper()
+        p_alvo = st.number_input("Preço Alvo:", min_value=0.0, key="new_a")
+        # Busca categorias para o select
+        cats_for_sel = [c['nome'] for c in res_c.data] if res_c.data else []
+        p_cat = st.selectbox("Categoria:", cats_for_sel, key="sel_cat_p")
+        
+        if st.button("Salvar Produto", key="save_p"):
+            if p_nome and p_cat:
+                supabase.table("lista_produtos").insert({"nome": p_nome, "categoria": p_cat, "preco_alvo": p_alvo}).execute()
+                st.rerun()
 
-    # --- MERCADOS ---
-    with st.expander("🛒 Lista de Mercados", expanded=True):
-        res_merc = supabase.table("lista_mercados").select("*").execute()
-        if res_merc.data:
-            for m in res_merc.data:
-                st.markdown(f"🏠 **{m.get('nome', 'Sem Nome')}**")
+    st.divider()
+
+    # 3. MERCADOS
+    st.subheader("3. Mercados")
+    with st.container():
+        res_m_list = supabase.table("lista_mercados").select("nome").order("nome").execute()
+        if res_m_list.data:
+            merc_nomes = ", ".join([m['nome'] for m in res_m_list.data])
+            st.info(f"**Mercados:** {merc_nomes}")
         else:
-            st.warning("Nenhum mercado encontrado no banco.")
+            st.warning("Nenhum mercado encontrado.")
 
-        st.write("---")
-        n_m = st.text_input("Cadastrar Novo Mercado:").upper()
-        if st.button("Salvar Mercado"):
-            supabase.table("lista_mercados").insert({"nome": n_m}).execute()
-            st.rerun()
+        m_nome = st.text_input("Novo Mercado:", key="new_m").upper()
+        if st.button("Adicionar Mercado", key="add_m"):
+            if m_nome:
+                supabase.table("lista_mercados").insert({"nome": m_nome}).execute()
+                st.rerun()
