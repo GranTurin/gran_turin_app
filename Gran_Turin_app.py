@@ -55,73 +55,56 @@ with tab1:
         
         st.link_button("📲 Enviar Menores Preços", f"https://wa.me/{whatsapp_num}?text={urllib.parse.quote(texto_wa)}", type="primary")
 
-# --- ABA 2: CADASTROS (AQUI ESTÁ O QUE VOCÊ PEDIU) ---
+# --- ABA 2: CADASTROS (REESCRITA PARA FORÇAR EXIBIÇÃO) ---
 with tab2:
     st.header("⚙️ Ver e Gerenciar Cadastros")
 
-    # --- 1. SEÇÃO DE CATEGORIAS ---
-    with st.expander("📂 Ver / Cadastrar Categorias"):
-        st.subheader("Categorias no Sistema")
-        res_cat = supabase.table("categorias").select("*").order("nome").execute()
+    # --- CATEGORIAS ---
+    with st.expander("📂 Lista de Categorias", expanded=True):
+        res_cat = supabase.table("categorias").select("*").execute()
         if res_cat.data:
+            # Mostra em uma lista simples
             for c in res_cat.data:
-                col_a, col_b = st.columns([4, 1])
-                col_a.write(f"• {c['nome']}")
-                if col_b.button("🗑️", key=f"del_c_{c['id']}"):
-                    supabase.table("categorias").delete().eq("id", c['id']).execute()
-                    st.rerun()
+                st.markdown(f"✅ **{c.get('nome', 'Sem Nome')}**")
         else:
-            st.info("Nenhuma categoria cadastrada.")
+            st.warning("Nenhuma categoria encontrada no banco.")
         
         st.write("---")
-        nova_c = st.text_input("Nova Categoria:").upper()
-        if st.button("Adicionar Categoria"):
+        nova_c = st.text_input("Cadastrar Nova Categoria:").upper()
+        if st.button("Salvar Categoria"):
             supabase.table("categorias").insert({"nome": nova_c}).execute()
             st.rerun()
 
-    # --- 2. SEÇÃO DE PRODUTOS ---
-    with st.expander("📦 Ver / Cadastrar Produtos"):
-        st.subheader("Produtos no Sistema")
-        res_prod = supabase.table("lista_produtos").select("*").order("nome").execute()
+    # --- PRODUTOS ---
+    with st.expander("📦 Lista de Produtos", expanded=True):
+        res_prod = supabase.table("lista_produtos").select("*").execute()
         if res_prod.data:
-            df_prod = pd.DataFrame(res_prod.data)[['nome', 'categoria', 'preco_alvo']]
-            df_prod.columns = ['Produto', 'Categoria', 'Preço Alvo']
-            st.table(df_prod) # Mostra a lista completa em tabela
-            
-            # Opção de deletar
-            p_para_deletar = st.selectbox("Selecione um produto para excluir:", ["Selecione..."] + [p['nome'] for p in res_prod.data])
-            if st.button("Confirmar Exclusão de Produto"):
-                supabase.table("lista_produtos").delete().eq("nome", p_para_deletar).execute()
-                st.rerun()
+            df_prod = pd.DataFrame(res_prod.data)
+            st.dataframe(df_prod, use_container_width=True)
         else:
-            st.info("Nenhum produto cadastrado.")
+            st.warning("Nenhum produto encontrado no banco.")
 
         st.write("---")
-        n_p = st.text_input("Nome do Novo Produto:").upper()
-        n_a = st.number_input("Preço Alvo do Produto:", min_value=0.0)
-        # Pega as categorias existentes para o select
-        lista_c = [c['nome'] for c in res_cat.data] if res_cat.data else []
-        n_c = st.selectbox("Categoria do Produto:", lista_c)
-        if st.button("Adicionar Produto"):
+        n_p = st.text_input("Cadastrar Novo Produto:").upper()
+        n_a = st.number_input("Preço Alvo:", min_value=0.0)
+        # Puxa categorias para o select
+        cat_options = [c['nome'] for c in res_cat.data] if res_cat.data else []
+        n_c = st.selectbox("Categoria:", cat_options)
+        if st.button("Salvar Produto"):
             supabase.table("lista_produtos").insert({"nome": n_p, "categoria": n_c, "preco_alvo": n_a}).execute()
             st.rerun()
 
-    # --- 3. SEÇÃO DE MERCADOS ---
-    with st.expander("🛒 Ver / Cadastrar Mercados"):
-        st.subheader("Mercados no Sistema")
-        res_merc = supabase.table("lista_mercados").select("*").order("nome").execute()
+    # --- MERCADOS ---
+    with st.expander("🛒 Lista de Mercados", expanded=True):
+        res_merc = supabase.table("lista_mercados").select("*").execute()
         if res_merc.data:
             for m in res_merc.data:
-                col_m1, col_m2 = st.columns([4, 1])
-                col_m1.write(f"• {m['nome']}")
-                if col_m2.button("🗑️", key=f"del_m_{m['id']}"):
-                    supabase.table("lista_mercados").delete().eq("id", m['id']).execute()
-                    st.rerun()
+                st.markdown(f"🏠 **{m.get('nome', 'Sem Nome')}**")
         else:
-            st.info("Nenhum mercado cadastrado.")
+            st.warning("Nenhum mercado encontrado no banco.")
 
         st.write("---")
-        n_m = st.text_input("Nome do Novo Mercado:").upper()
-        if st.button("Adicionar Mercado"):
+        n_m = st.text_input("Cadastrar Novo Mercado:").upper()
+        if st.button("Salvar Mercado"):
             supabase.table("lista_mercados").insert({"nome": n_m}).execute()
             st.rerun()
