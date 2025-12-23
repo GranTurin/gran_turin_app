@@ -41,17 +41,23 @@ with tab1:
             if st.button("Salvar Preço"):
                 res_cat = supabase.table("lista_produtos").select("categoria").eq("nome", prod_sel).execute()
                 cat = res_cat.data[0]['categoria'] if res_cat.data else "Geral"
-                supabase.table("precos").insert({"produto": prod_sel, "mercado": merc_sel, "valor": valor_input, "categoria": cat}).execute()
+                supabase.table("precos").insert({
+                    "produto": prod_sel, 
+                    "mercado": merc_sel, 
+                    "valor": valor_input, 
+                    "categoria": cat
+                }).execute()
                 st.success("Preço salvo com sucesso!")
                 st.rerun()
 
     st.divider()
 
+    # --- LISTAGEM E BOTÃO WHATSAPP ---
     res_precos = supabase.table("precos").select("*").execute()
     if res_precos.data:
         df = pd.DataFrame(res_precos.data)
         
-        # --- BOTÃO DE RESUMO PARA WHATSAPP ---
+        # Gerar texto para WhatsApp (Menores Preços)
         texto_resumo = "*🛒 MELHORES PREÇOS ENCONTRADOS:*\n\n"
         for p_nome in sorted(df['produto'].unique()):
             df_p = df[df['produto'] == p_nome]
@@ -62,7 +68,7 @@ with tab1:
         st.link_button("📲 Enviar Lista de Menores Preços", link_resumo, type="primary", use_container_width=True)
         st.divider()
 
-        # LISTAGEM VISUAL (CARDS COLORIDOS)
+        # Cards Coloridos
         for cat in sorted(df['categoria'].unique()):
             st.markdown(f"#### 📂 {cat}")
             df_cat = df[df['categoria'] == cat]
@@ -78,8 +84,8 @@ with tab1:
                 for _, row in precos_prod.iterrows():
                     venc = (row['valor'] == min_price)
                     oferta = (alvo > 0 and row['valor'] <= alvo)
-                    bg = "#d4edda" if venc else "#ffffff"
-                    if oferta: bg = "#fff3cd"
+                    bg = "#d4edda" if venc else "#ffffff" # Verde se for o mais barato
+                    if oferta: bg = "#fff3cd" # Amarelo se for oferta alvo
                     
                     st.markdown(f"""
                         <div style="background-color:{bg}; padding:12px; border-radius:8px; border:1px solid #eee; margin-bottom:10px; color: black;">
@@ -95,72 +101,77 @@ with tab1:
                         st.rerun()
             st.divider()
 
-# --- ABA 2: CADASTROS (COM VISUALIZAÇÃO DO QUE JÁ EXISTE) ---
+# --- ABA 2: CADASTROS (COM FORÇA DE EXIBIÇÃO) ---
 with tab2:
     st.header("⚙️ Gerenciar Cadastros")
 
     # 1. CATEGORIAS
-    with st.expander("1. Categorias"):
+    with st.expander("1. Categorias", expanded=True):
         col_c1, col_c2 = st.columns([3, 1])
-        n_cat = col_c1.text_input("Nova Categoria").upper()
+        n_cat = col_c1.text_input("Nova Categoria", key="input_cat").upper()
         if col_c2.button("Adicionar", key="btn_cat"):
             if n_cat:
                 supabase.table("categorias").insert({"nome": n_cat}).execute()
-                st.success("Categoria adicionada!")
                 st.rerun()
         
         st.write("---")
-        st.subheader("Categorias Existentes")
         res_c = supabase.table("categorias").select("*").order("nome").execute()
         if res_c.data:
+            st.write("**Categorias Cadastradas:**")
             for c in res_c.data:
                 c_col1, c_col2 = st.columns([4, 1])
-                c_col1.text(f"• {c['nome']}")
+                c_col1.text(f"✅ {c['nome']}")
                 if c_col2.button("🗑️", key=f"del_cat_{c['id']}"):
                     supabase.table("categorias").delete().eq("id", c['id']).execute()
                     st.rerun()
+        else:
+            st.info("Nenhuma categoria encontrada.")
 
     # 2. PRODUTOS
     with st.expander("2. Produtos"):
         res_c_list = supabase.table("categorias").select("nome").execute()
         cs = [c['nome'] for c in res_c_list.data] if res_c_list.data else []
         
-        p_n = st.text_input("Nome do Produto").upper()
-        col_p1, col_p2 = st.columns(2)
-        p_a = col_p1.number_input("Preço Alvo (R$)", min_value=0.0, step=0.01)
-        p_c = col_p2.selectbox("Categoria", cs)
+        p_n = st.text_input("Nome do Produto", key="input_prod").upper()
+        p_a = st.number_input("Preço Alvo (R$)", min_value=0.0, step=0.01)
+        p_c = st.selectbox("Categoria", cs)
         
-        if st.button("Adicionar Produto", key="btn_prod"):
+        if st.button("Salvar Produto"):
             if p_n and p_c:
-                supabase.table("lista_produtos").insert({"nome": p_n, "categoria": p_c, "preco_alvo": p_a}).execute()
-                st.success("Produto adicionado!")
+                supabase.table("lista_produtos").insert({
+                    "nome": p_n, 
+                    "categoria": p_c, 
+                    "preco_alvo": p_a
+                }).execute()
                 st.rerun()
 
         st.write("---")
-        st.subheader("Produtos Existentes")
         res_p = supabase.table("lista_produtos").select("*").order("nome").execute()
         if res_p.data:
+            st.write("**Produtos Cadastrados:**")
             df_p = pd.DataFrame(res_p.data)[['nome', 'categoria', 'preco_alvo']]
-            df_p.columns = ['Produto', 'Categoria', 'Alvo (R$)']
+            df_p.columns = ['Produto', 'Categoria', 'Alvo']
             st.dataframe(df_p, use_container_width=True)
+            for p in res_p.data:
+                if st.button(f"Excluir {p['nome']}", key=f"del_prod_{p['id']}"):
+                    supabase.table("lista_produtos").delete().eq("id", p['id']).execute()
+                    st.rerun()
 
     # 3. MERCADOS
     with st.expander("3. Mercados"):
-        col_m1, col_m2 = st.columns([3, 1])
-        m_n = col_m1.text_input("Nome do Mercado").upper()
-        if col_m2.button("Adicionar", key="btn_merc"):
+        m_n = st.text_input("Nome do Mercado", key="input_merc").upper()
+        if st.button("Salvar Mercado"):
             if m_n:
                 supabase.table("lista_mercados").insert({"nome": m_n}).execute()
-                st.success("Mercado adicionado!")
                 st.rerun()
 
         st.write("---")
-        st.subheader("Mercados Existentes")
         res_m = supabase.table("lista_mercados").select("*").order("nome").execute()
         if res_m.data:
+            st.write("**Mercados Cadastrados:**")
             for m in res_m.data:
                 m_col1, m_col2 = st.columns([4, 1])
-                m_col1.text(f"• {m['nome']}")
+                m_col1.text(f"🛒 {m['nome']}")
                 if m_col2.button("🗑️", key=f"del_merc_{m['id']}"):
                     supabase.table("lista_mercados").delete().eq("id", m['id']).execute()
                     st.rerun()
