@@ -76,7 +76,7 @@ if df is not None:
         # Seleção do Pedido
         st.subheader("📝 Monte seu prato")
         tamanho = st.selectbox("📏 Tamanho da Marmita:", ["Selecione..."] + opcoes_tamanho)
-        carne = st.selectbox("🥩 Carne/Proteína Principal:", ["Selecione..."] + opcoes_carne)
+        carne = st.selectbox("🥩 Proteína Principal:", ["Selecione..."] + opcoes_carne)
         acomps = st.multiselect("🥗 Acompanhamentos (escolha vários):", opcoes_acomp)
         obs = st.text_area("🗒️ Observações (Opcional):", placeholder="Ex: Sem feijão, mandar talher, etc.")
 
@@ -110,7 +110,7 @@ if df is not None:
                 st.success("Tudo certo! Clique no botão abaixo para finalizar no WhatsApp.")
                 st.link_button("🟢 ABRIR WHATSAPP PARA CONCLUIR", link)
             else:
-                st.error("⚠️ Por favor, preencha Nome, Endereço, Tamanho e Carne!")
+                st.error("⚠️ Por favor, preencha Nome, Endereço, Tamanho e Proteina!")
 
     except KeyError as e:
         st.error(f"Erro: A coluna {e} não foi encontrada na planilha. Verifique os títulos!")
@@ -119,3 +119,4 @@ else:
 
 st.markdown("---")
 st.caption("Gran Turin - Sistema de Pedidos v2.5")
+
