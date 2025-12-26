@@ -9,21 +9,9 @@ st.set_page_config(
     initial_sidebar_state="collapsed",
 )
 
-# Meta tags para o preview no WhatsApp (og:image)
-st.markdown(
-    """
-    <head>
-        <meta property="og:title" content="🍱 Gran Turin - Cardápio Digital" />
-        <meta property="og:description" content="Monte seu pedido e envie pelo WhatsApp!" />
-        <meta property="og:image" content="https://raw.githubusercontent.com/GranTurin/gran_turin_app/main/logo.png" />
-    </head>
-    """, unsafe_allow_html=True
-)
-
-# Estilização CSS para Mobile e Botões
+# Estilização CSS
 st.markdown("""
     <style>
-    .main { overflow-y: auto; }
     .stButton button { 
         width: 100%; 
         border-radius: 12px; 
@@ -33,16 +21,22 @@ st.markdown("""
         font-weight: bold;
         border: none;
     }
-    .stButton button:hover { border: 1px solid #128C7E; color: white; }
-    .stButton button:disabled { background-color: #d3d3d3; color: #888888; cursor: not-allowed; }
-    [data-testid="stHeader"] { background: rgba(0,0,0,0); }
+    .stButton button:disabled { background-color: #d3d3d3; color: #888888; }
+    .destaque-cardapio {
+        background-color: #f0f2f6;
+        padding: 10px;
+        border-radius: 10px;
+        border-left: 5px solid #25D366;
+    }
     </style>
     """, unsafe_allow_html=True)
 
-# 2. CARREGAMENTO DE DADOS (Google Sheets CSV)
-URL_PLANILHA = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQBai98jFvBGaS_TM0Qaao5bGanhR85VbvSuFFJvbha1DW5gXJlyXXqEiq3dUgVvQTqplDcG3jQqqLG/pub?output=csv"
+# 2. CARREGAMENTO DE DADOS
+# Usando o ID da sua nova planilha fornecida
+ID_PLANILHA = "1iXXBhK5lt0Eml_VE1BPXbxgSesjeVK9DJFCZAuklGd4"
+URL_PLANILHA = f"https://docs.google.com/spreadsheets/d/{ID_PLANILHA}/export?format=csv"
 
-@st.cache_data(ttl=60) # Atualiza a cada 1 minuto
+@st.cache_data(ttl=60)
 def carregar_dados():
     try:
         df = pd.read_csv(URL_PLANILHA)
@@ -54,51 +48,56 @@ def carregar_dados():
 
 df = carregar_dados()
 
-# 3. INTERFACE
-st.image("https://raw.githubusercontent.com/GranTurin/gran_turin_app/main/logo.png", width=100)
-st.title("🍱 Cardápio do Dia")
-st.write("Preencha os dados e monte seu prato abaixo:")
+# 3. CABEÇALHO (Logo ao lado dos dados)
+if df is not None:
+    col_logo, col_info = st.columns([1, 2])
+    
+    with col_logo:
+        st.image("https://raw.githubusercontent.com/GranTurin/gran_turin_app/main/logo.png", width=110)
+    
+    with col_info:
+        st.markdown("**🍴 Sugestões de Hoje:**")
+        # Pega as carnes e acompanhamentos para exibir no topo
+        carnes_hoje = ", ".join(df['Carnes'].dropna().astype(str).tolist()[:3]) # Mostra as 3 primeiras
+        acomps_hoje = ", ".join(df['Acompanhamentos'].dropna().astype(str).tolist()[:3])
+        
+        st.markdown(f"**🥩 Carnes:** {carnes_hoje}")
+        st.markdown(f"**🥗 Acomps:** {acomps_hoje}")
 
+st.divider()
+
+# 4. INTERFACE DE PEDIDO
 if df is not None:
     try:
-        # Extração das listas (ignorando valores vazios)
         opcoes_carne = df['Carnes'].dropna().tolist()
         opcoes_acomp = df['Acompanhamentos'].dropna().tolist()
         opcoes_tamanho = df['Tamanho'].dropna().tolist()
 
-        # FORMULÁRIO DE IDENTIFICAÇÃO
+        # Identificação
         with st.container(border=True):
-            nome = st.text_input("👤 Seu Nome:", placeholder="Como quer ser chamado?")
-            end = st.text_input("📍 Endereço/Loja:", placeholder="Ex: Rua Direita, 123 ou Loja B")
+            nome = st.text_input("👤 Seu Nome:", placeholder="Ex: João Silva")
+            end = st.text_input("📍 Endereço/Loja:", placeholder="Ex: Rua Direita, 123")
 
-        # SELEÇÃO DO PEDIDO (Proteínas e Tamanho agora no topo)
-        st.subheader("📝 Escolhas Principais")
-        col1, col2 = st.columns(2)
-        with col1:
+        # Seleção
+        st.subheader("📝 Monte seu prato")
+        c1, c2 = st.columns(2)
+        with c1:
             tamanho = st.selectbox("📏 Tamanho:", ["Selecione..."] + opcoes_tamanho)
-        with col2:
-            carne = st.selectbox("🥩 Proteína:", ["Selecione..."] + opcoes_carne)
+        with c2:
+            carne_escolhida = st.selectbox("🥩 Proteína:", ["Selecione..."] + opcoes_carne)
         
-        st.subheader("🥗 Acompanhamentos")
-        acomps = st.multiselect("Escolha seus acompanhamentos:", opcoes_acomp)
-        
-        obs = st.text_area("🗒️ Observações (Opcional):", placeholder="Ex: Sem feijão, mandar talher, etc.")
+        acomps_escolhidos = st.multiselect("🥗 Escolha seus acompanhamentos:", opcoes_acomp)
+        obs = st.text_area("🗒️ Observações:", placeholder="Ex: Sem cebola, enviar talher...")
 
-        st.divider()
+        # Lógica do Botão (Impedir cliques acidentais)
+        pode_enviar = nome and end and carne_escolhida != "Selecione..." and tamanho != "Selecione..."
 
-        # Verificação de campos obrigatórios
-        pode_enviar = nome and end and carne != "Selecione..." and tamanho != "Selecione..."
-
-        # 4. LÓGICA DE ENVIO
         if not pode_enviar:
-            st.warning("⚠️ Preencha Nome, Endereço, Tamanho e Proteína para liberar o pedido.")
-        
-        # O botão fica desabilitado (disabled) se os campos não estiverem preenchidos
+            st.info("💡 Preencha os campos obrigatórios para liberar o envio.")
+
         if st.button("🚀 GERAR PEDIDO NO WHATSAPP", disabled=not pode_enviar):
+            txt_acomps = ", ".join(acomps_escolhidos) if acomps_escolhidos else "Padrão da casa"
             
-            txt_acomps = ", ".join(acomps) if acomps else "Padrão da casa"
-            
-            # Formatação da mensagem para o WhatsApp
             texto_pedido = (
                 f"*🍱 NOVO PEDIDO - GRAN TURIN*\n"
                 f"━━━━━━━━━━━━━━━━━━━━━\n"
@@ -106,24 +105,21 @@ if df is not None:
                 f"*📍 ENDEREÇO:* {end}\n"
                 f"━━━━━━━━━━━━━━━━━━━━━\n"
                 f"*📏 TAMANHO:* {tamanho}\n"
-                f"*🥩 PROTEÍNA:* {carne}\n"
+                f"*🥩 PROTEÍNA:* {carne_escolhida}\n"
                 f"*🥗 ACOMPS:* {txt_acomps}\n"
                 f"*🗒️ OBS:* {obs if obs else 'Nenhuma'}\n"
                 f"━━━━━━━━━━━━━━━━━━━━━\n"
                 f"✅ _Enviado via Cardápio Digital_"
             )
             
-            # Link do WhatsApp
             numero_whatsapp = "5521986577315"
             link = f"https://wa.me/{numero_whatsapp}?text={urllib.parse.quote(texto_pedido)}"
             
-            st.success("Tudo pronto! Clique no botão verde para abrir o WhatsApp.")
-            st.link_button("🟢 ABRIR WHATSAPP E CONCLUIR", link)
+            st.success("Pedido gerado!")
+            st.link_button("🟢 CLIQUE AQUI PARA ENVIAR NO WHATSAPP", link)
 
-    except KeyError as e:
-        st.error(f"Erro: A coluna {e} não foi encontrada na planilha. Verifique se os nomes estão corretos!")
-else:
-    st.info("Aguardando carregamento dos dados da planilha...")
+    except Exception as e:
+        st.error(f"Erro ao processar colunas: {e}")
 
 st.markdown("---")
-st.caption("Gran Turin - Sistema de Pedidos v2.6")
+st.caption("Gran Turin - v2.7")
