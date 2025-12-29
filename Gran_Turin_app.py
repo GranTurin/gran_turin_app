@@ -23,6 +23,14 @@ st.markdown(
 # Estilização CSS para Mobile e Botões
 st.markdown("""
     <style>
+
+    /* 1. Remove o balão "Hosted with Streamlit / Created by..." */
+    [data-testid="stStatusWidget"], .stAppToolbar {
+        display: none !important;
+        visibility: hidden !important;
+    }
+    
+    /* 1. SEU ESTILO ORIGINAL (Botão e Scroll) */
     .main { overflow-y: auto; }
     .stButton button { 
         width: 100%; 
@@ -34,10 +42,34 @@ st.markdown("""
         border: none;
     }
     .stButton button:hover { border: 1px solid #128C7E; color: white; }
-    [data-testid="stHeader"] { background: rgba(0,0,0,0); }
+
+    /* 2. LIMPEZA DA INTERFACE (Esconde Header, Menu e GitHub) */
+    /* Esconde a barra do topo inteira */
+    [data-testid="stHeader"] {
+        display: none !important;
+    }
+    
+    /* Esconde o menu de hambúrguer */
+    #MainMenu {
+        visibility: hidden !important;
+    }
+    
+    /* Esconde o rodapé */
+    footer {
+        visibility: hidden !important;
+    }
+
+    /* Remove botões de deploy e barra de ferramentas para o usuário */
+    .stAppDeployButton, .stAppToolbar {
+        display: none !important;
+    }
+
+    /* Ajuste de respiro no topo */
+    .block-container {
+        padding-top: 2rem !important;
+    }
     </style>
     """, unsafe_allow_html=True)
-
 # 2. CARREGAMENTO DE DADOS (Google Sheets CSV)
 # Usando o link da sua nova planilha com formato de exportação CSV
 ID_PLANILHA = "1iXXBhK5lt0Eml_VE1BPXbxgSesjeVK9DJFCZAuklGd4"
@@ -120,3 +152,4 @@ else:
 
 st.markdown("---")
 st.caption("Gran Turin - Sistema de Pedidos v2.5")
+
